@@ -41,7 +41,7 @@ namespace ChatHubServer.ChatHub
             recieverdata = MemberList.Memlist.Where(i => i.memberid == Convert.ToInt32(recieveid)).FirstOrDefault();
 
 
-            var speakerData = new ChatResp 
+            var sendToChatData = new ChatResp 
             { 
                 memberid = userdata.memberid,
                 username = userdata.nickname,
@@ -52,7 +52,7 @@ namespace ChatHubServer.ChatHub
             //要傳到message組件的訊息
             //也要分傳給接收者還是自己的
             //自己接收的性別 要是接收 者的 不然大頭貼會嘿嘿嘿
-            var chatLastMsgData = new ChatMsgLastData
+            var LastMsgSpeaker = new ChatMsgLastData
             {
                 memberid = userdata.memberid,
                 gender = recieverdata.gender,
@@ -64,7 +64,7 @@ namespace ChatHubServer.ChatHub
                 chatid = recieverdata.memberid.ToString(),
             };
 
-            var chatLastMsgDataRec = new ChatMsgLastData
+            var LastMsgReciever = new ChatMsgLastData
             {
                 memberid = userdata.memberid,
                 gender = userdata.gender,
@@ -92,11 +92,11 @@ namespace ChatHubServer.ChatHub
 
             var resultList = useridList.Concat(recieveidList).ToList();
             //傳到聊天室的訊息
-            await Clients.Clients(resultList).SendAsync("RecieveBothMsg", speakerData, input);
+            await Clients.Clients(resultList).SendAsync("RecieveBothMsg", sendToChatData, input);
 
             //傳訊息到message 組件 (最後訊息)
-            await Clients.Clients(useridList).SendAsync("SendLastMsg", chatLastMsgData); 
-            await Clients.Clients(recieveidList).SendAsync("SendLastMsg", chatLastMsgDataRec);//result.forReciever
+            await Clients.Clients(useridList).SendAsync("SendLastMsg", LastMsgSpeaker); 
+            await Clients.Clients(recieveidList).SendAsync("SendLastMsg", LastMsgReciever);//result.forReciever
 
             //修改未讀總數
             //改變footer 未讀總數
@@ -111,6 +111,10 @@ namespace ChatHubServer.ChatHub
         {
             //member 的 connectionid list
             var useridList = ConnectList[userid];
+
+            //點進去聊天室時，修改自己的
+            //修改message 組件的 未讀
+            await Clients.Clients(useridList).SendAsync("ChangeToRead", recieveid, 0);
             //改變footer 未讀總數
             await Clients.Clients(useridList).SendAsync("ChangeTotal", 0, 0);
         }
